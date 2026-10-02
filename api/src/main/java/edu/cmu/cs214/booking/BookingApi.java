@@ -47,42 +47,39 @@ public interface BookingApi {
      * <p>Ids are assigned by the implementation, are unique, and increase in
      * creation order.
      *
-     * <p>This overload creates a booking without notes: {@link Booking#getNotes()}
-     * returns null.
-     *
-     * @param roomId      the room to book, non-null
-     * @param startMinute first minute of the booking, inclusive
-     * @param endMinute   first minute after the booking, exclusive; must be
-     *                    greater than {@code startMinute}
-     * @param waitlistKey caller's waitlist key, or null to decline waitlisting
-     * @return the CONFIRMED booking, the WAITLISTED booking, or null when the
-     *         range conflicts and no waitlist key was given
-     * @throws IllegalArgumentException if {@code roomId} is null or
-     *         {@code endMinute} is not greater than {@code startMinute}
-     */
-    Booking createBooking(String roomId, long startMinute, long endMinute,
-                          String waitlistKey);
-
-    /**
-     * Books a room with optional notes. All validation, conflict, waitlist, and
-     * id rules of {@link #createBooking(String, long, long, String)} apply.
-     *
      * <p>Notes are stored unchanged and returned by {@link Booking#getNotes()}.
      * They do not affect conflicts or waitlisting.
      *
-     * @param roomId      the room to book, non-null
-     * @param startMinute first minute of the booking, inclusive
-     * @param endMinute   first minute after the booking, exclusive; must be
-     *                    greater than {@code startMinute}
-     * @param waitlistKey caller's waitlist key, or null to decline waitlisting
-     * @param notes       caller's notes, or null if none
+     * @param request booking details, non-null; roomId must be non-null and
+     *                endMinute must be greater than startMinute
      * @return the CONFIRMED booking, the WAITLISTED booking, or null when the
      *         range conflicts and no waitlist key was given
-     * @throws IllegalArgumentException if {@code roomId} is null or
-     *         {@code endMinute} is not greater than {@code startMinute}
+     * @throws IllegalArgumentException if the request or its roomId is null,
+     *         or endMinute is not greater than startMinute
      */
-    Booking createBooking(String roomId, long startMinute, long endMinute,
-                          String waitlistKey, String notes);
+    Booking createBooking(BookingRequest request);
+
+    /**
+     * Books without notes, using the request method's contract.
+     * @deprecated Use {@link #createBooking(BookingRequest)} with null notes.
+     */
+    @Deprecated
+    default Booking createBooking(String roomId, long startMinute, long endMinute,
+                                  String waitlistKey) {
+        return createBooking(new BookingRequest(roomId, startMinute, endMinute,
+                waitlistKey, null));
+    }
+
+    /**
+     * Books with optional notes, using the request method's contract.
+     * @deprecated Use {@link #createBooking(BookingRequest)}.
+     */
+    @Deprecated
+    default Booking createBooking(String roomId, long startMinute, long endMinute,
+                                  String waitlistKey, String notes) {
+        return createBooking(new BookingRequest(roomId, startMinute, endMinute,
+                waitlistKey, notes));
+    }
 
     /**
      * Returns every non-cancelled booking for one room, ordered by start minute.

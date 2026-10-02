@@ -14,7 +14,7 @@ class InMemoryBookingServiceTest {
 
     @Test
     void freeRoomGivesConfirmedBooking() {
-        Booking booking = api.createBooking("R1", 540, 600, null);
+        Booking booking = api.createBooking(new BookingRequest("R1", 540, 600, null, null));
 
         assertEquals(BookingStatus.CONFIRMED, booking.getStatus());
         assertEquals(540, booking.getStartMinute());
@@ -22,17 +22,17 @@ class InMemoryBookingServiceTest {
 
     @Test
     void conflictWithoutKeyReturnsNull() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(new BookingRequest("R1", 540, 600, null, null));
 
-        assertNull(api.createBooking("R1", 570, 630, null));
+        assertNull(api.createBooking(new BookingRequest("R1", 570, 630, null, null)));
         assertEquals(1, api.listBookings("R1").size());
     }
 
     @Test
     void conflictWithKeyGoesOnWaitlist() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(new BookingRequest("R1", 540, 600, null, null));
 
-        Booking queued = api.createBooking("R1", 570, 630, "party-of-four");
+        Booking queued = api.createBooking(new BookingRequest("R1", 570, 630, "party-of-four", null));
 
         assertEquals(BookingStatus.WAITLISTED, queued.getStatus());
         assertEquals("party-of-four", queued.getWaitlistKey());
@@ -40,17 +40,17 @@ class InMemoryBookingServiceTest {
 
     @Test
     void touchingRangesDoNotConflict() {
-        api.createBooking("R1", 540, 600, null);
+        api.createBooking(new BookingRequest("R1", 540, 600, null, null));
 
-        Booking next = api.createBooking("R1", 600, 660, null);
+        Booking next = api.createBooking(new BookingRequest("R1", 600, 660, null, null));
 
         assertEquals(BookingStatus.CONFIRMED, next.getStatus());
     }
 
     @Test
     void cancelWithNotifyPromotesTheWaitlistedBooking() {
-        Booking held = api.createBooking("R1", 540, 600, null);
-        Booking queued = api.createBooking("R1", 570, 630, "party-of-four");
+        Booking held = api.createBooking(new BookingRequest("R1", 540, 600, null, null));
+        Booking queued = api.createBooking(new BookingRequest("R1", 570, 630, "party-of-four", null));
 
         assertTrue(api.cancelBooking(held.getId(), true));
 

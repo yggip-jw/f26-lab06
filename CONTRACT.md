@@ -51,34 +51,94 @@ Our new overload has a different argument count, so this ambiguity does not occu
 
 ### Prediction (write this before you run the build)
 
-**Will the untouched consumer still compile and pass?** Yes or no, and if no,
-which module goes red and whether at compile time or test time.
+**Will the untouched consumer still compile and pass?** No. The consumer module
+will fail during compilation because the four-parameter method is removed.
 
-**Where.** Name the call sites you expect to be affected, if any.
+**Where.** `FrontDesk.java:27` and `FrontDesk.java:33` still call
+`createBooking(roomId, startMinute, endMinute, key)` instead of passing a
+`BookingRequest`.
 
-**What about the tests in `api/`, after you update them?** And whether their
-result is evidence about the consumer.
+**What about the tests in `api/`, after you update them?** All five should pass
+after migration to the request method because booking behavior stays the same.
+This does not prove compatibility: those tests use the new API, while the
+consumer still uses the removed method.
 
 ### Step 1: after the fold
 
-**What the build printed.** Paste it for each module, including file and
-line for anything that failed.
+**What the build printed.** `mvn -B clean test`:
 
-**Which module's tests ran, and which did not.** And what that tells you about
-who can detect a contract break.
+```text
+api:
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+consumer compilation:
+[ERROR] /Users/juewei/Study/17514/f26-lab06/consumer/src/main/java/edu/cmu/cs214/frontdesk/FrontDesk.java:[27,19] method createBooking in interface edu.cmu.cs214.booking.BookingApi cannot be applied to given types;
+  required: edu.cmu.cs214.booking.BookingRequest
+  found:    java.lang.String,long,long,<nulltype>
+  reason: actual and formal argument lists differ in length
+[ERROR] /Users/juewei/Study/17514/f26-lab06/consumer/src/main/java/edu/cmu/cs214/frontdesk/FrontDesk.java:[33,19] method createBooking in interface edu.cmu.cs214.booking.BookingApi cannot be applied to given types;
+  required: edu.cmu.cs214.booking.BookingRequest
+  found:    java.lang.String,long,long,java.lang.String
+  reason: actual and formal argument lists differ in length
+
+[INFO] lab06-booking-parent                                               [pom]
+[INFO] lab06-api                                                          [jar]
+[INFO] lab06-consumer                                                     [jar]
+[INFO] lab06-booking-parent ............................... SUCCESS [  0.072 s]
+[INFO] lab06-api .......................................... SUCCESS [  0.870 s]
+[INFO] lab06-consumer ..................................... FAILURE [  0.046 s]
+[INFO] BUILD FAILURE
+```
+
+**Which module's tests ran, and which did not.** All five API tests ran and
+passed. Consumer compilation failed, so none of its seven tests ran. The
+consumer compiler detected the broken contract; the migrated API tests did not.
 
 ### Step 2: the deprecation path
 
-**What you added.** The signatures that came back, and what they delegate to.
+**What you added.** Restored both overloads as `@Deprecated` default methods
+in `BookingApi`:
 
-**The warnings.** Paste one deprecation warning line from the build log (from
-a `mvn -B clean test` run, since a rerun with nothing to compile prints none).
+```java
+Booking createBooking(String roomId, long startMinute, long endMinute,
+                      String waitlistKey);
+Booking createBooking(String roomId, long startMinute, long endMinute,
+                      String waitlistKey, String notes);
+```
 
-**What the deprecation path resolves.** Who can now build that could not build
-during step 1, and who is on which schedule.
+Both construct a `BookingRequest` and delegate to `createBooking(BookingRequest)`.
+The four-parameter overload supplies null notes. Their `@deprecated` Javadoc
+names the replacement.
 
-**What the warnings accomplish that a README note would not.** Be concrete
-about where the warning shows up and who sees it without looking for it.
+**The warnings.** From the second `mvn -B clean test`:
+
+```text
+[WARNING] /Users/juewei/Study/17514/f26-lab06/consumer/src/main/java/edu/cmu/cs214/frontdesk/FrontDesk.java:[27,19] createBooking(java.lang.String,long,long,java.lang.String) in edu.cmu.cs214.booking.BookingApi has been deprecated
+```
+
+The same warning appeared at `FrontDesk.java:[33,19]`. Both modules now pass:
+
+```text
+api:
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+consumer:
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+
+[INFO] lab06-booking-parent                                               [pom]
+[INFO] lab06-api                                                          [jar]
+[INFO] lab06-consumer                                                     [jar]
+[INFO] lab06-booking-parent ............................... SUCCESS [  0.072 s]
+[INFO] lab06-api .......................................... SUCCESS [  0.848 s]
+[INFO] lab06-consumer ..................................... SUCCESS [  0.369 s]
+[INFO] BUILD SUCCESS
+```
+
+**What the deprecation path resolves.** The unchanged consumer can build again.
+The API team can offer the request method now, while the consumer team migrates
+on its own schedule before any future removal of the old methods.
+
+**What the warnings accomplish that a README note would not.** During compilation,
+the consumer team sees warnings naming the old method and the exact file and
+line to update. They do not have to look for a migration note in the README.
 
 ---
 
