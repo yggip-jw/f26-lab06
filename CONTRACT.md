@@ -39,7 +39,7 @@ consumer:
 The first clean attempt was blocked by local Maven cache permissions before
 compilation; rerunning with the required access produced the result above.
 
-**If your prediction was wrong,** not applicable. The result matched the prediction.
+
 
 **Is an additive change always safe in Java?** No. Adding `f(Integer)` alongside
 `f(String)` makes an existing `f(null)` call ambiguous, so it no longer compiles.
