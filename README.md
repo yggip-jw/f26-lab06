@@ -1,3 +1,4 @@
+codex-gpt6.1
 # Lab 6 Starter: Booking API and a Consumer You Do Not Own
 
 Two Maven modules in one repo. `api/` is a room booking API you maintain.
@@ -42,3 +43,5 @@ From this directory. Maven builds `api` first, then compiles and tests
   you want it running.
 
 See the Lab 6 handout on the course page for the three milestones you show a TA.
+
+Tools and models used: OpenAI Codex (GPT-6).

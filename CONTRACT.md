@@ -148,27 +148,53 @@ Not coded. One misuse, one redesign, one cost. Discuss it with your TA.
 
 ### The misuse
 
-**What is easy to get wrong.** One specific thing about the API surface.
+**What is easy to get wrong.** The boolean in `cancelBooking` does not explain
+whether cancellation should promote a waitlisted booking. A caller can reverse
+true and false, and the compiler still accepts it.
 
-**The call site.** File and line in `consumer/`, with the call. Show the
-code that a reader cannot understand without opening the javadoc, or that a
-caller could get wrong with the compiler still happy.
+**The call site.** `consumer/src/main/java/edu/cmu/cs214/frontdesk/FrontDesk.java:48`:
 
-**What goes wrong when it happens.** Silent bad behavior, wrong data, a crash
-somewhere far away?
+```java
+return api.cancelBooking(bookingId, true);
+```
+
+The literal `true` alone does not reveal its meaning. Line 53 uses `false`
+for quiet cancellation.
+
+**What goes wrong when it happens.** Passing false when promotion is intended
+silently leaves eligible guests WAITLISTED. Passing true for a quiet correction
+can unexpectedly promote a guest. Cancellation can return true in either case,
+so its return value does not reveal the mistake.
 
 ### The redesign
 
-**The proposal.** Types, enums, factories, or whatever you are proposing. Show
-the new signature and the new call site.
+**The proposal.** Replace the boolean with an explicit policy:
 
-**Why the mistake is now hard or impossible to make.** Point at the mechanism,
-such as the compiler, a validating constructor, or an exhaustive switch.
+```java
+enum CancellationPolicy {
+    PROMOTE_FIRST_ELIGIBLE,
+    KEEP_WAITLIST_UNCHANGED
+}
+
+boolean cancelBooking(long bookingId, CancellationPolicy policy);
+
+// Replacement for the call at FrontDesk.java:48:
+return api.cancelBooking(bookingId, CancellationPolicy.PROMOTE_FIRST_ELIGIBLE);
+```
+
+**Why the mistake is now hard or impossible to make.** The compiler rejects a
+bare boolean at the new signature, and the enum name makes the intended behavior
+visible at the call site. Choosing the wrong enum value is still possible, but
+easier to notice in review. The implementation should reject null policies.
 
 ### One tradeoff
 
-**What it costs.** Something real, such as caller ceremony, migration burden
-against the deprecation path you just built, or more types for a newcomer to
-learn. "No real downside" does not count.
+**What it costs.** Callers must learn an extra type and migrate their calls.
+Replacing the boolean method immediately would break existing consumers again.
+A migration would keep it as a deprecated adapter: true maps to
+PROMOTE_FIRST_ELIGIBLE and false to KEEP_WAITLIST_UNCHANGED. That temporarily
+leaves two methods to document and maintain.
 
-**When the price is worth paying.** A condition under which it is.
+**When the price is worth paying.** When multiple teams use the API or an
+accidental promotion affects real room allocations, explicit intent is worth
+the extra type and migration work.
