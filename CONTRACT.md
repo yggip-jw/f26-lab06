@@ -21,12 +21,29 @@ tests should still pass.
 
 ### What happened
 
-**The result.** What the build printed for each module.
+**The result.** `mvn -B test` passed. A fresh `mvn -B clean test` also
+recompiled both modules and passed, with `consumer/` unchanged:
 
-**If your prediction was wrong,** say what you missed.
+```text
+api:
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+consumer:
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
 
-**Is an additive change always safe in Java?** One case where adding something
-to an API still breaks a caller, if you can name one.
+[INFO] lab06-booking-parent ............................... SUCCESS [  0.794 s]
+[INFO] lab06-api .......................................... SUCCESS [  0.839 s]
+[INFO] lab06-consumer ..................................... SUCCESS [  0.363 s]
+[INFO] BUILD SUCCESS
+```
+
+The first clean attempt was blocked by local Maven cache permissions before
+compilation; rerunning with the required access produced the result above.
+
+**If your prediction was wrong,** not applicable. The result matched the prediction.
+
+**Is an additive change always safe in Java?** No. Adding `f(Integer)` alongside
+`f(String)` makes an existing `f(null)` call ambiguous, so it no longer compiles.
+Our new overload has a different argument count, so this ambiguity does not occur.
 
 ---
 
