@@ -11,10 +11,13 @@ Keep it short and specific. Point at methods, call sites, and error text.
 
 ### Prediction (write this before you run the build, and you can deliberate with your agent)
 
-**Will the consumer, untouched, still compile and pass?** Yes or no.
+**Will the consumer, untouched, still compile and pass?** Yes.
 
-**Why.** What does the compiler do with the consumer's existing call sites once
-the new overload exists?
+**Why.** The calls in `FrontDesk.java:27` and `FrontDesk.java:33` still pass
+four arguments, so the compiler selects the existing four-parameter method.
+The new overload takes five arguments and creates no ambiguity. The old method
+keeps the same booking behavior and defaults notes to null, so the consumer's
+tests should still pass.
 
 ### What happened
 

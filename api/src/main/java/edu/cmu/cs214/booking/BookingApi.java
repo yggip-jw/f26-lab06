@@ -47,6 +47,9 @@ public interface BookingApi {
      * <p>Ids are assigned by the implementation, are unique, and increase in
      * creation order.
      *
+     * <p>This overload creates a booking without notes: {@link Booking#getNotes()}
+     * returns null.
+     *
      * @param roomId      the room to book, non-null
      * @param startMinute first minute of the booking, inclusive
      * @param endMinute   first minute after the booking, exclusive; must be
@@ -59,6 +62,27 @@ public interface BookingApi {
      */
     Booking createBooking(String roomId, long startMinute, long endMinute,
                           String waitlistKey);
+
+    /**
+     * Books a room with optional notes. All validation, conflict, waitlist, and
+     * id rules of {@link #createBooking(String, long, long, String)} apply.
+     *
+     * <p>Notes are stored unchanged and returned by {@link Booking#getNotes()}.
+     * They do not affect conflicts or waitlisting.
+     *
+     * @param roomId      the room to book, non-null
+     * @param startMinute first minute of the booking, inclusive
+     * @param endMinute   first minute after the booking, exclusive; must be
+     *                    greater than {@code startMinute}
+     * @param waitlistKey caller's waitlist key, or null to decline waitlisting
+     * @param notes       caller's notes, or null if none
+     * @return the CONFIRMED booking, the WAITLISTED booking, or null when the
+     *         range conflicts and no waitlist key was given
+     * @throws IllegalArgumentException if {@code roomId} is null or
+     *         {@code endMinute} is not greater than {@code startMinute}
+     */
+    Booking createBooking(String roomId, long startMinute, long endMinute,
+                          String waitlistKey, String notes);
 
     /**
      * Returns every non-cancelled booking for one room, ordered by start minute.
